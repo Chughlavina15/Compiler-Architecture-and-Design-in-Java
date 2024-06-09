@@ -1,0 +1,322 @@
+
+import java_cup.runtime.*;
+
+terminal CLASS;             //2
+terminal CURLY_OPEN;        //3
+terminal CURLY_CLOSE;       //4
+terminal FINAL;             //5
+
+terminal EQUALS;            //6
+terminal ROUND_OPEN;        //7
+terminal ROUND_CLOSE;       //8
+
+terminal SEMICOLON;         //9
+terminal COLON;             //10
+terminal COMMA;             //11 
+terminal SQUARE_OPEN;         //12
+terminal SQUARE_CLOSE;         //13
+
+terminal VOID;              //14
+terminal INT;               //15
+terminal CHAR;              //16
+terminal STRING;            //17
+terminal BOOL;              //18
+terminal FLOAT;             //19
+
+terminal TRUE;              //20
+terminal FALSE;             //21
+
+terminal PLUS;              //22
+terminal QUESTION;          //23
+terminal MINUS;             //24
+terminal MULTIPLY;          //25
+terminal DIVIDE;            //26
+terminal NOT;               //27
+
+terminal IF;                //28
+terminal ELSE;              //29
+terminal WHILE;             //30
+terminal READ;              //31
+terminal PRINT;             //32
+terminal PRINTLINE;         //33
+terminal RETURN;            //34
+
+terminal INCR;              //35
+terminal DECR;              //36
+terminal LESSTHAN;          //37
+terminal GREATERTHAN;       //38
+terminal LESSTHANEQUAL;     //39
+terminal GREATERTHANEQUAL;  //40
+terminal EQUALSCHECK;       //41
+terminal NOTEQUAL;          //42
+terminal AND;               //43
+terminal OR;                //44
+
+terminal String ID;         //45
+terminal String CHARLIT;      //46
+terminal int INTLIT;        //47
+terminal String STRLIT;     //48
+terminal float FLOATLIT;    //49
+
+
+non terminal Program program;
+non terminal Memberdecls memberDeclarations;
+non terminal Members members;
+non terminal Fielddecls fieldDeclarations;
+non terminal Fielddecl fieldDeclaration;
+non terminal Methoddecls methodDeclarations;
+non terminal Methoddecl methodDeclaration;
+non terminal Argdecls argDeclarations;
+non terminal Argdecl argDeclaration;
+non terminal ArgdeclList argDeclarationsList;
+non terminal String type;
+non terminal Expr optionalexpr;
+non terminal Stmts stmts;
+non terminal Stmt stmt;
+non terminal Expr expr;
+non terminal Name name;
+non terminal Readlist readList;
+non terminal Printlist printList;
+non terminal Printlinelist printLineList;
+non terminal Args arguments;
+non terminal String optionalSemi;
+non terminal Binaryoperations binaryOperations;
+
+
+precedence left COMMA;
+precedence right EQUALS;
+precedence left OR;
+precedence left AND;
+precedence left EQUALSCHECK, NOTEQUAL;
+precedence left GREATERTHAN, LESSTHAN, LESSTHANEQUAL, GREATERTHANEQUAL;
+precedence left PLUS, MINUS;
+precedence left MULTIPLY, DIVIDE;
+precedence left PLUS, MINUS, NOT;
+precedence right INCR, DECR;
+
+//Productions
+
+program ::= CLASS ID:id CURLY_OPEN memberDeclarations: memberDecls CURLY_CLOSE
+		{: RESULT = new Program(id, memberDecls); :}
+		;
+
+memberDeclarations ::=	members: membrs
+		{:	RESULT = new Memberdecls(membrs);	:}
+		;
+
+members	::=	fieldDeclaration: fieldDecl members: membrs
+		{:	RESULT = new Members(fieldDecl, membrs);	:}
+		| methodDeclaration: methodDecl methodDeclarations: methodDecls
+		{:	RESULT = new Members(methodDecl, methodDecls);	:}
+		| {:	RESULT = new Members();	:}
+		;
+
+fieldDeclarations	::= fieldDeclaration: fieldDecl fieldDeclarations: fieldDecls
+						{:	RESULT = fieldDecls.prepend(fieldDecl);	:}
+						|
+						{:	RESULT = new Fielddecls();	:}
+						;
+
+fieldDeclaration	::=	FINAL type: type ID:id optionalexpr: optionalExpression SEMICOLON
+						{:	RESULT = new Fielddecl("final", type, id, optionalExpression);	:}
+						| type: type ID:id optionalexpr: optionalExpression SEMICOLON
+						{:	RESULT = new Fielddecl("", type, id, optionalExpression);	:}
+						| type: type ID:id SQUARE_OPEN INTLIT: integerLiteral SQUARE_CLOSE SEMICOLON
+						{:	RESULT = new Fielddecl(type, id, integerLiteral);	:}
+						;
+
+optionalexpr	::=	EQUALS expr: expression
+					{:	RESULT = expression;	:}
+					|
+					{:	RESULT = null;	:}
+					;
+
+
+methodDeclarations	::=	methodDeclaration: methodDecl methodDeclarations: methodDecls
+						{:	RESULT = methodDecls.prepend(methodDecl);	:}
+						|
+						{:	RESULT = new Methoddecls();	:}
+						;
+
+methodDeclaration	::=	type: type ID: id ROUND_OPEN argDeclarations: argDecls ROUND_CLOSE CURLY_OPEN fieldDeclarations: fieldDecls stmts: statements CURLY_CLOSE SEMICOLON
+						{:	RESULT = new Methoddecl(type, id, argDecls, fieldDecls, statements, true);	:}
+						| type: type ID: id ROUND_OPEN argDeclarations: argDecls ROUND_CLOSE CURLY_OPEN fieldDeclarations: fieldDecls stmts: statements CURLY_CLOSE
+						{:	RESULT = new Methoddecl(type, id, argDecls, fieldDecls, statements, false);	:}
+						;
+
+argDeclarations ::=	argDeclarationsList: argDeclsList
+					{:	RESULT = new Argdecls(argDeclsList);	:}
+					|
+					{:	RESULT = new Argdecls();	:}
+					;
+
+argDeclarationsList	::=	argDeclaration: argDecl COMMA argDeclarationsList: argDeclList
+						{:	RESULT = new ArgdeclList(argDecl, argDeclList);	:}
+						| argDeclaration: argDecl
+						{:	RESULT = new ArgdeclList(argDecl);	:}
+						;
+
+argDeclaration	::=	type: type ID:id
+					{:	RESULT = new Argdecl(type, id, false);	:}
+					| type: type ID:id SQUARE_OPEN SQUARE_CLOSE
+					{:	RESULT = new Argdecl(type, id, true);	:}
+					;
+
+
+stmts ::= 	stmt:s stmts:ss
+        	{: RESULT = ss.prepend(s); :}
+           	|
+           	{: RESULT = new Stmts(); :}
+			| IF ROUND_OPEN expr:ex ROUND_CLOSE stmt:st1 ELSE stmt:st2 stmts:ss
+			{: RESULT = ss.prepend(new Stmt(ex, st1, st2));  :}
+			| IF ROUND_OPEN expr:ex ROUND_CLOSE stmt:st1 stmts:ss
+        	{: RESULT = ss.prepend(new Stmt(ex, st1, null));  :}
+           ;
+
+stmt ::= WHILE ROUND_OPEN expr:expression ROUND_CLOSE stmt: statement
+	{:	RESULT = new Stmt(expression, statement); :}
+	| name: n EQUALS expr:e SEMICOLON
+	{:	RESULT = new Stmt(n, e); :}
+	| READ ROUND_OPEN readList:rl ROUND_CLOSE SEMICOLON
+	{:	RESULT = new Stmt(rl);	:}
+	| PRINT ROUND_OPEN printList:pl ROUND_CLOSE SEMICOLON
+	{:	RESULT = new Stmt(pl);	:}
+	| PRINTLINE ROUND_OPEN printLineList: pll ROUND_CLOSE SEMICOLON
+	{:	RESULT = new Stmt(pll);	:}
+	| ID:id ROUND_OPEN ROUND_CLOSE SEMICOLON
+	{:	RESULT = new Stmt(id);	:}
+	| ID:id ROUND_OPEN arguments:args ROUND_CLOSE SEMICOLON
+	{:	RESULT = new Stmt(id, args);	:}
+	| RETURN SEMICOLON
+	{:	RESULT = new Stmt();	:}
+	| RETURN expr:e SEMICOLON
+	{:	RESULT = new Stmt(e);	:}
+	| name: n INCR SEMICOLON
+	{:	RESULT = new Stmt(n,"++", true);	:}
+	| name: n DECR SEMICOLON
+	{:	RESULT = new Stmt(n,"--", true);	:}
+	| CURLY_OPEN fieldDeclarations: fieldDecls stmts:sts CURLY_CLOSE SEMICOLON
+	{:	RESULT = new Stmt(fieldDecls, sts, true);	:}
+	| CURLY_OPEN fieldDeclarations: fieldDecls stmts:sts CURLY_CLOSE
+	{:	RESULT = new Stmt(fieldDecls, sts, false);	:}
+	;
+
+
+readList ::= name:n COMMA readList:rl
+	{:	RESULT = new Readlist(n,rl); :}
+	| name:n
+	{:	RESULT = new Readlist(n); :}
+	;
+
+
+name ::= ID:id
+		{:	RESULT = new Name(id);	:}
+		| ID:id SQUARE_OPEN expr: expression SQUARE_CLOSE
+		{:	RESULT = new Name(id, expression);	:}
+		;
+
+
+printLineList ::= printList:pl
+	{:	RESULT = new Printlinelist(pl);	:}
+	|
+	{:	RESULT = new Printlinelist();	:}
+	;
+
+
+printList ::= expr:e COMMA printList:pl
+	{:	RESULT = new Printlist(e, pl);	:}
+	| expr:e
+	{:	RESULT = new Printlist(e);	:}
+	;
+
+
+optionalSemi ::= SEMICOLON
+			{:	RESULT = ";";	:}
+			|
+			{:	RESULT = ""; :}
+			;
+
+arguments ::= expr:e COMMA arguments:args
+			{:	RESULT = new Args(e,args);	:}
+			| expr:e
+			{:	RESULT = new Args(e);	:}
+			;
+
+expr ::= name: n
+        {:  RESULT = new Expr(n);   :}
+		| ID:id ROUND_OPEN ROUND_CLOSE
+		{:	RESULT = new Expr(id, (Args) null);	:}
+        | ID:id ROUND_OPEN arguments: args ROUND_CLOSE
+		{:	RESULT = new Expr(id, args);	:}
+		| ROUND_OPEN expr: expression ROUND_CLOSE
+		{:	RESULT = new Expr(expression, "()");	:}
+		| INTLIT: expressionNumber
+		{:	RESULT = new Expr(expressionNumber);	:}
+		| FLOATLIT: expressionFloat
+		{:	RESULT = new Expr(expressionFloat);	:}
+		| CHARLIT: charLiteral
+		{:	RESULT = new Expr(charLiteral, "char");	:}
+		| STRLIT: stringLiteral
+		{:	RESULT = new Expr(stringLiteral, "string");	:}
+		| TRUE
+		{:	RESULT = new Expr(true);	:}
+		| FALSE
+		{:	RESULT = new Expr(false);	:}
+		| NOT expr: expression
+		{:	RESULT = new Expr(expression, "~");	:}
+		| PLUS expr: expression
+		{:	RESULT = new Expr(expression, "+");	:}
+		| MINUS expr: expression
+		{:	RESULT = new Expr(expression, "-");	:}
+		| ROUND_OPEN type: type ROUND_CLOSE expr: expression
+		{:	RESULT = new Expr(type, expression);	:}
+		| binaryOperations: binaryexpressions
+		{:	RESULT = new Expr(binaryexpressions);	:}
+		| ROUND_OPEN expr:e1 QUESTION expr:e2 COLON expr:e3 ROUND_CLOSE
+		{: RESULT = new Expr(e1, e2, e3);  :}
+		;
+
+type ::=	INT
+			{: RESULT = "int"; :}
+			|	FLOAT
+			{: RESULT = "float"; :}
+			|	BOOL
+			{: RESULT = "bool"; :}
+			| CHAR
+			{: RESULT = "char"; :}
+			| VOID
+			{:	RESULT = "void";	:}
+			;
+
+
+binaryOperations	::= expr: leftExpression MULTIPLY expr: rightExpression
+						{:	RESULT = new Binaryoperations(leftExpression, rightExpression, "*");	:}
+						| expr: leftExpression DIVIDE expr: rightExpression
+						{:	RESULT = new Binaryoperations(leftExpression, rightExpression, "/");	:}
+						| expr: leftExpression PLUS expr: rightExpression
+						{:	RESULT = new Binaryoperations(leftExpression, rightExpression, "+");	:}
+						| expr: leftExpression MINUS expr: rightExpression
+						{:	RESULT = new Binaryoperations(leftExpression, rightExpression, "-");	:}
+						| expr: leftExpression LESSTHAN expr: rightExpression
+						{:	RESULT = new Binaryoperations(leftExpression, rightExpression, "<");	:}
+						| expr: leftExpression GREATERTHAN expr: rightExpression
+						{:	RESULT = new Binaryoperations(leftExpression, rightExpression, ">");	:}
+						| expr: leftExpression LESSTHANEQUAL expr: rightExpression
+						{:	RESULT = new Binaryoperations(leftExpression, rightExpression, "< =");	:}
+						| expr: leftExpression GREATERTHANEQUAL expr: rightExpression
+						{:	RESULT = new Binaryoperations(leftExpression, rightExpression, "> =");	:}
+						| expr: leftExpression EQUALSCHECK expr: rightExpression
+						{:	RESULT = new Binaryoperations(leftExpression, rightExpression, "==");	:}
+						| expr: leftExpression NOTEQUAL expr: rightExpression
+						{:	RESULT = new Binaryoperations(leftExpression, rightExpression, "<>");	:}
+						| expr: leftExpression OR expr: rightExpression
+						{:	RESULT = new Binaryoperations(leftExpression, rightExpression, "||");	:}
+						| expr: leftExpression AND expr: rightExpression
+						{:	RESULT = new Binaryoperations(leftExpression, rightExpression, "&&");	:}
+						;
+
+
+
+
+
+

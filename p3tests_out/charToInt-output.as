@@ -1,0 +1,1 @@
+ Error: Incompatible types: char cannot be casted to int

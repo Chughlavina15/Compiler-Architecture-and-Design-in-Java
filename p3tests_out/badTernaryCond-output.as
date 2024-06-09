@@ -1,0 +1,1 @@
+ Error: Incompatible types for ternary operator: float cannot be converted to Boolean

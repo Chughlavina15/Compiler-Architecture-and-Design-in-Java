@@ -1,0 +1,1 @@
+ Error: Function foo is already defined in this scope!

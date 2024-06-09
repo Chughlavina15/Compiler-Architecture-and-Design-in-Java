@@ -1,0 +1,1 @@
+ Error: Incompatible types: bool cannot be casted to int

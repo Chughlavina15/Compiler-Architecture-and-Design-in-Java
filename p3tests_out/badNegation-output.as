@@ -1,0 +1,1 @@
+ Error: ~ is incompatible with variables of type char

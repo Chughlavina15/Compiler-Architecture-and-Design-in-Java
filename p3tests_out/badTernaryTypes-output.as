@@ -1,0 +1,1 @@
+ Error: Incompatible types for ternary operator: expr1 type float doesn't match expr2 type bool

@@ -1,0 +1,1 @@
+Error: Cant apply arithmetic operator - on expression of type: string and string
